@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ChannelController;
 use App\Http\Controllers\Api\DepartmentController;
@@ -27,4 +28,8 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
 
     // Thread Replies
     Route::get('/channels/{channel}/messages/{message}/thread', [MessageController::class, 'thread']);
+
+    //Attachments
+    Route::post('/attachments', [AttachmentController::class, 'store']);
+    Route::delete('/attachments/{attachment}', [AttachmentController::class, 'destroy']);
 });
