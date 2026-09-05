@@ -29,4 +29,33 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Get the department the user belongs to
+     */
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    /**
+     * Get the channels the user is a member of
+     */
+
+    public function channels()
+    {
+        return $this->belongsToMany(Channel::class)
+            ->withPivot('role', 'last_read_at')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get all messages posted bt the user
+     */
+
+    public function messages()
+    {
+        return $this->hasMany(Message::class);
+    }
 }
