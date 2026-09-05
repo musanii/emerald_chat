@@ -17,6 +17,8 @@ class MessageController extends Controller
 
     public function index(Channel $channel)
     {
+        $this->authorize('view',$channel);
+
         $messages = $channel->messages()
             ->whereNull('parent_id')
             ->with(['user', 'attachments'])
@@ -33,6 +35,8 @@ class MessageController extends Controller
 
     public function store(StoreMessageRequest $request, Channel $channel)
     {
+        $this->authorize('postMessage', $channel);
+        
         $message = $channel->messages()->create([
             'user_id' => $request->user()->id,
             'parent_id' => $request->parent_id,
