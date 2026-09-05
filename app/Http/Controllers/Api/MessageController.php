@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\MessageSent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Message\StoreMessageRequest;
 use App\Http\Resources\MessageResource;
@@ -17,7 +18,7 @@ class MessageController extends Controller
 
     public function index(Channel $channel)
     {
-        $this->authorize('view',$channel);
+        $this->authorize('view', $channel);
 
         $messages = $channel->messages()
             ->whereNull('parent_id')
@@ -36,13 +37,16 @@ class MessageController extends Controller
     public function store(StoreMessageRequest $request, Channel $channel)
     {
         $this->authorize('postMessage', $channel);
-        
+
         $message = $channel->messages()->create([
             'user_id' => $request->user()->id,
             'parent_id' => $request->parent_id,
             'body' => $request->body,
         ]);
-        return (new MessageResource($message->load(['user', 'attachments'])))
+        $message->load(['user', 'attachments']);
+        broadcast(new MessageSent($message))->toOthers();
+
+        return (new MessageResource($message))
             ->response()
             ->setStatusCode(201);
     }
