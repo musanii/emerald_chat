@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Request;
 
-class LoginRequest extends Controller
+class LoginRequest extends FormRequest
 {
     public function authorize()
     {

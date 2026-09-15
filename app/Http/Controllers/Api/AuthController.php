@@ -8,7 +8,8 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Nette\Schema\ValidationException;
+use Illuminate\Validation\ValidationException;
+
 
 class AuthController extends Controller
 {
@@ -16,30 +17,35 @@ class AuthController extends Controller
      * Issue a sanctum Bearer Token upon successful authentication.
      */
 
-    public function login(LoginRequest $request)
-    {
-        $user = User::where('email', $request->email)->first();
-        if (!$user || Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessage([
-                'email' => ['The provided credentials do not match our records.'],
-            ]);
-        }
+ public function login(LoginRequest $request)
+{
+    // Retrieve validated inputs safely
+    $credentials = $request->validated();
 
-        $deviceName = $request->device_name ?? 'emerald-chat-client';
-        $token = $user->createToken($deviceName)->plainTextToken;
+    $user = User::where('email', $credentials['email'])->first();
 
-        return response()->json([
-            'message' => 'Authenticated successfully.',
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'department_id' => $user->department_id
-            ],
+    // Check if user exists and verify password (!Hash::check)
+    if (!$user || !Hash::check($credentials['password'], $user->password)) {
+        throw ValidationException::withMessages([
+            'email' => ['The provided credentials do not match our records.'],
         ]);
     }
+
+    $deviceName = $request->input('device_name', 'emerald-chat-client');
+    $token = $user->createToken($deviceName)->plainTextToken;
+
+    return response()->json([
+        'message' => 'Authenticated successfully.',
+        'access_token' => $token,
+        'token_type' => 'Bearer',
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'department_id' => $user->department_id
+        ],
+    ]);
+}
 
     /**
      * Get the currently authenticated user with department details.

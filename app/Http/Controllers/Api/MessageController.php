@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Events\MessageSent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Message\StoreMessageRequest;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Http\Resources\MessageResource;
 use App\Models\Channel;
 use App\Models\Message;
@@ -12,6 +13,7 @@ use Illuminate\Http\Request;
 
 class MessageController extends Controller
 {
+    use AuthorizesRequests;
     /**
      * Fetch root messages for a specific channel(paginated)
      */

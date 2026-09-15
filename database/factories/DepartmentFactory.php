@@ -19,7 +19,7 @@ class DepartmentFactory extends Factory
     public function definition(): array
     {
 
-    $name = $this->faker->unique()->departmet();
+    $name = $this->faker->unique()->word();
         return [
             'name'=>$name,
             'slug'=> Str::slug($name),

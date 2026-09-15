@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::create('attachments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('message_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('message_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('file_name');
             $table->string('file_path');
-            $table->unsignedBigInteger('file_size');
+            $table->integer('file_size');
             $table->string('mime_type');
-
             $table->timestamps();
         });
     }
