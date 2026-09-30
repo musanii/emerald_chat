@@ -8,6 +8,7 @@ use App\Http\Resources\ChannelResource;
 use App\Models\Channel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use App\Events\UserTyping;
 
 class ChannelController extends Controller
 {
@@ -59,4 +60,11 @@ class ChannelController extends Controller
         $channel->users()->attach($request->user()->id,  ['role' => 'member']);
         return response()->json(['message' => 'Successfully joined the channel.']);
     }
+
+    public function typing(Channel $channel)
+{
+    broadcast(new UserTyping($channel->id, auth()->user()))->toOthers();
+
+    return response()->json(['status' => 'success']);
+}
 }

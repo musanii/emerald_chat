@@ -25,6 +25,8 @@ class StoreMessageRequest extends FormRequest
         return [
             'body' => ['required', 'string', 'max:5000'],
             'parent_id' => ['nullable', 'exists:messages,id'],
+            'attachment_ids' => 'nullable|array',
+            'attachment_ids.*' => 'exists:attachments,id',
         ];
     }
 }

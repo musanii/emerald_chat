@@ -19,9 +19,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-
-        //1. Create Departments
-
+        // 1. Create Departments
         $departments = collect(['Engineering', 'Human Resources', 'Marketing', 'Product Strategy'])->map(function ($deptName) {
             return Department::create([
                 'name' => $deptName,
@@ -30,23 +28,28 @@ class DatabaseSeeder extends Seeder
             ]);
         });
 
-        //Create Users
+        // 2. Create Admin User explicitly attached to the first department
         $admin = User::factory()->create([
             'name' => 'Admin User',
             'email' => 'admin@ameraldchat.app',
+            'department_id' => $departments->first()->id,
         ]);
 
-        $users = User::factory(10)->create();
-        $allUsers = $users->push($admin);
-
-        //Assign users across departments.
-        $allUsers->each(function ($user) use ($departments) {
-            $user->update(['department_id' => $departments->random()->id]);
+        // 3. Create regular users and assign departments
+        $users = User::factory(10)->create()->each(function ($user) use ($departments) {
+            $user->update([
+                'department_id' => $departments->random()->id,
+            ]);
         });
 
-        // 3. Create Default & Custom Channels per Department
+        $allUsers = $users->push($admin);
+
+        // 4. Create Default & Custom Channels per Department
         $departments->each(function ($dept) use ($allUsers) {
-            // Public department announcement channel
+            // Get users belonging to this department
+            $deptUsers = $allUsers->where('department_id', $dept->id);
+
+            // Public channel
             $generalChannel = Channel::create([
                 'department_id' => $dept->id,
                 'name' => "{$dept->slug}-general",
@@ -55,7 +58,7 @@ class DatabaseSeeder extends Seeder
                 'description' => "General discussion for {$dept->name}",
             ]);
 
-            // Private team channel
+            // Private channel
             $privateChannel = Channel::create([
                 'department_id' => $dept->id,
                 'name' => "{$dept->slug}-leads",
@@ -63,28 +66,46 @@ class DatabaseSeeder extends Seeder
                 'type' => 'private',
                 'description' => "Leadership channel for {$dept->name}",
             ]);
-            // Attach users to channels via pivot table
-            $allUsers->each(function ($user) use ($generalChannel, $privateChannel) {
-                $generalChannel->users()->attach($user->id, ['role' => 'member']);
-                if (rand(0, 1)) {
-                    $privateChannel->users()->attach($user->id, ['role' => 'member']);
-                }
+
+            // Attach department members to public & private channels
+            $deptUsers->each(function ($user) use ($generalChannel, $privateChannel) {
+                $generalChannel->users()->syncWithoutDetaching([$user->id => ['role' => 'member']]);
+                $privateChannel->users()->syncWithoutDetaching([$user->id => ['role' => 'member']]);
             });
 
-            // 4. Populate Root Messages and Thread Replies
-            $rootMessages = Message::factory(5)->create([
-                'channel_id' => $generalChannel->id,
-                'user_id' => $allUsers->random()->id,
+            // 5. Populate Root Messages and Thread Replies
+            if ($deptUsers->isNotEmpty()) {
+                $rootMessages = Message::factory(5)->create([
+                    'channel_id' => $generalChannel->id,
+                    'user_id' => $deptUsers->random()->id,
+                ]);
+
+                $rootMessages->each(function ($parentMessage) use ($generalChannel, $deptUsers) {
+                    Message::factory(rand(2, 4))->create([
+                        'channel_id' => $generalChannel->id,
+                        'user_id' => $deptUsers->random()->id,
+                        'parent_id' => $parentMessage->id,
+                    ]);
+                });
+            }
+        });
+
+        // 6. Seed Direct Message (DM) Channels
+        $otherUsers = $allUsers->where('id', '!=', $admin->id);
+
+        foreach ($otherUsers->take(3) as $otherUser) {
+            $dmChannel = Channel::create([
+                'department_id' => $admin->department_id,
+                'name' => $otherUser->name,
+                'slug' => "dm-{$admin->id}-{$otherUser->id}",
+                'type' => 'direct',
+                'description' => "Direct message conversation",
             ]);
 
-            $rootMessages->each(function ($parentMessage) use ($generalChannel, $allUsers) {
-                // Create 2-4 thread replies per root message
-                Message::factory(rand(2, 4))->create([
-                    'channel_id' => $generalChannel->id,
-                    'user_id' => $allUsers->random()->id,
-                    'parent_id' => $parentMessage->id,
-                ]);
-            });
-        });
+            $dmChannel->users()->attach([
+                $admin->id => ['role' => 'member'],
+                $otherUser->id => ['role' => 'member'],
+            ]);
+        }
     }
 }

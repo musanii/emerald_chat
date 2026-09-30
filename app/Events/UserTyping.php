@@ -6,22 +6,19 @@ use App\Models\User;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class UserTyping
+// Use ShouldBroadcastNow so typing indicators don't get stuck in queue workers
+class UserTyping implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    /**
-     * Create a new event instance.
-     */
 
     public int $channelId;
     public int $userId;
     public string $userName;
+
     public function __construct(int $channelId, User $user)
     {
         $this->channelId = $channelId;
@@ -29,11 +26,6 @@ class UserTyping
         $this->userName = $user->name;
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return array<int, Channel>
-     */
     public function broadcastOn(): array
     {
         return [
@@ -41,7 +33,7 @@ class UserTyping
         ];
     }
 
-    public function broadcastAs()
+    public function broadcastAs(): string
     {
         return 'user.typing';
     }

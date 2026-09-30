@@ -23,6 +23,7 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::get('/channels', [ChannelController::class, 'index']);
     Route::post('/channels', [ChannelController::class, 'store']);
     Route::post('/channels/{channel}/join', [ChannelController::class, 'join']);
+    Route::post('/channels/{channel}/typing', [ChannelController::class, 'typing']);
 
 
     // Channel Messages
